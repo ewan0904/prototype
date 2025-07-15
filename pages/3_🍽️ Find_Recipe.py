@@ -705,7 +705,6 @@ def render_warning_nutritional(value, description, recipe_id):
 
 def recipe_tab(prompt):
     recipe_ids = get_recipe(prompt)
-    st.write(recipe_ids)
 
     recipe_ids_int = []
     for rid in recipe_ids:
@@ -740,7 +739,7 @@ def recipe_tab(prompt):
             })
 
         except Exception as e:
-            st.warning(f"Skipping recipe {recipe_id} due to error: {e}")
+            print("")
 
     # Convert to DataFrame
     df = pd.DataFrame(results)

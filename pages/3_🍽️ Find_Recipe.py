@@ -705,6 +705,7 @@ def render_warning_nutritional(value, description, recipe_id):
 
 def recipe_tab(prompt):
     recipe_ids = get_recipe(prompt)
+    st.write(recipe_ids)
 
     recipe_ids_int = []
     for rid in recipe_ids:

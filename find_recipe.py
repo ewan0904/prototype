@@ -1,4 +1,5 @@
 import requests
+import streamlit as st
 
 def get_recipe(input):
 

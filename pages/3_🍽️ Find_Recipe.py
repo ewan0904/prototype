@@ -769,8 +769,10 @@ with st.form("find_recipe_form"):
 # ----------------------------------------------------------------------------------------------------
 # # Grid options
 # ----------------------------------------------------------------------------------------------------
+# ==== REPLACE THIS WHOLE AgGrid SECTION ====
+from st_aggrid import GridUpdateMode, DataReturnMode
+
 recipe_df = st.session_state.profile['other']['recipe_df']
-# ==== REPLACE FROM HERE (AgGrid setup + selection) ====
 if recipe_df is not None and not recipe_df.empty:
     st.info("""
             The table below shows you a collection of different recipes that matched with your prompt. 
@@ -782,21 +784,18 @@ if recipe_df is not None and not recipe_df.empty:
             All of the ratings are calculated based on your preferences, and range from 0 (worst) to 100 (best).
             """,  icon="ℹ️")
 
-    # --- Make data JSON-serializable to avoid BigInt issues in the JS bridge ---
+    # --- Make data JSON-serializable to avoid BigInt issues ---
     df = recipe_df.copy()
-    int_like_cols = df.select_dtypes(include=["int64", "Int64", "uint64", "UInt64"]).columns.tolist()
-    for c in int_like_cols:
-        # Use pandas nullable ints, replace NaN with None, then cast to Python int
-        df[c] = df[c].astype("Int64")
-        df[c] = df[c].where(df[c].notna(), None)
-        df[c] = df[c].apply(lambda v: int(v) if v is not None else None)
+    for c in df.select_dtypes(include=["int64", "Int64", "uint64", "UInt64"]).columns:
+        df[c] = df[c].astype("Int64").where(df[c].notna(), None).apply(lambda v: int(v) if v is not None else None)
 
-    # Build grid options
+    # --- Build grid options ---
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_selection('single', use_checkbox=False)
     gb.configure_grid_options(
         domLayout="normal",
-        # Force a string row id so the grid never creates a BigInt key
+        suppressRowClickSelection=False,   # allow row click to select
+        rowSelection="single",
         getRowId=JsCode("function(p){ return String(p.data.recipe_id ?? p.rowIndex); }"),
     )
     gb.configure_pagination(enabled=True, paginationPageSize=5)
@@ -814,22 +813,26 @@ if recipe_df is not None and not recipe_df.empty:
     gb.configure_column("final_score", valueFormatter="Number(value).toFixed(0)",
                         header_name="Overall\nRating", width=120,
                         headerTooltip="Combined rating (nutritional & environmental), from 0 (worst) to 100 (best)")
+
+    # Hide the auto index column if st_aggrid injects it
+    if "::auto_unique_id::" in df.columns:
+        gb.configure_column("::auto_unique_id::", hide=True)
+
     grid_options = gb.build()
 
     grid_response = AgGrid(
-        df,  # use the cleaned df
+        df,                                        # use the cleaned df
         gridOptions=grid_options,
         theme='streamlit',
-        update_on="value_changed",
-        enable_enterprise_modules=False,
         fit_columns_on_grid_load=True,
-        reload_data=True,
         allow_unsafe_jscode=True,
-        data_return_mode="AS_INPUT",
-        update_mode="SELECTION_CHANGED",
+        data_return_mode=DataReturnMode.AS_INPUT,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,   # emit on row selection
+        enable_enterprise_modules=False,
+        reload_data=True,
     )
 
-    # Robust selection handling (list or DataFrame depending on st_aggrid version)
+    # Robust selection handling
     selected_rows = grid_response.get('selected_rows')
     recipe_id = None
     if isinstance(selected_rows, list) and selected_rows:
@@ -843,8 +846,7 @@ if recipe_df is not None and not recipe_df.empty:
         recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(
             ['**🥘 Recipe**', '**🥗 Nutrition**', '**🌳 Environment**', '**🔢 Calculation**']
         )
-# ==== REPLACE UNTIL HERE ====
-
+# ==== END REPLACEMENT ====
 
 # ----------------------------------------------------------------------------------------------------
 # Recipe Tab

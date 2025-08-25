@@ -770,7 +770,8 @@ with st.form("find_recipe_form"):
 # # Grid options
 # ----------------------------------------------------------------------------------------------------
 recipe_df = st.session_state.profile['other']['recipe_df']
-if recipe_df is not None:
+# ==== REPLACE FROM HERE (AgGrid setup + selection) ====
+if recipe_df is not None and not recipe_df.empty:
     st.info("""
             The table below shows you a collection of different recipes that matched with your prompt. 
             You can click on any of them to get more details.
@@ -780,73 +781,70 @@ if recipe_df is not None:
             The other ratings show how well a recipe is performing when looking at its nutritional composition related to human health, environmental impact, and a combined score. 
             All of the ratings are calculated based on your preferences, and range from 0 (worst) to 100 (best).
             """,  icon="ℹ️")
-    
-    gb = GridOptionsBuilder.from_dataframe(recipe_df)
-    gb.configure_selection('single', use_checkbox=False)  # Single cell selection
-    gb.configure_grid_options(domLayout="normal")
+
+    # --- Make data JSON-serializable to avoid BigInt issues in the JS bridge ---
+    df = recipe_df.copy()
+    int_like_cols = df.select_dtypes(include=["int64", "Int64", "uint64", "UInt64"]).columns.tolist()
+    for c in int_like_cols:
+        # Use pandas nullable ints, replace NaN with None, then cast to Python int
+        df[c] = df[c].astype("Int64")
+        df[c] = df[c].where(df[c].notna(), None)
+        df[c] = df[c].apply(lambda v: int(v) if v is not None else None)
+
+    # Build grid options
+    gb = GridOptionsBuilder.from_dataframe(df)
+    gb.configure_selection('single', use_checkbox=False)
+    gb.configure_grid_options(
+        domLayout="normal",
+        # Force a string row id so the grid never creates a BigInt key
+        getRowId=JsCode("function(p){ return String(p.data.recipe_id ?? p.rowIndex); }"),
+    )
     gb.configure_pagination(enabled=True, paginationPageSize=5)
     gb.configure_column("final_score", sort='desc')
-    # Set widths for specific columns
     gb.configure_column("recipe_id", header_name="ID", width=70)
     gb.configure_column("title", header_name="Title", width=250)
-    gb.configure_column("rating", header_name="User\nRating", width=80, headerTooltip="Actual user ratings, from 1 (worst) to 5 (best)")
-    gb.configure_column("health_score", valueFormatter="value.toFixed(0)", header_name="Health\nRating", width=120, headerTooltip="Nutritional rating, from 0 (worst) to 100 (best)")
-    gb.configure_column("environment_score", valueFormatter="value.toFixed(0)", header_name="Environment\nRating", width=140, headerTooltip="Environmental rating, from 0 (worst) to 100 (best)")
-    gb.configure_column("final_score", valueFormatter="value.toFixed(0)", header_name="Overall\nRating", width=120, headerTooltip="Combined rating (nutritional & environmental), from 0 (worst) to 100 (best)")
+    gb.configure_column("rating", header_name="User\nRating", width=80,
+                        headerTooltip="Actual user ratings, from 1 (worst) to 5 (best)")
+    gb.configure_column("health_score", valueFormatter="Number(value).toFixed(0)",
+                        header_name="Health\nRating", width=120,
+                        headerTooltip="Nutritional rating, from 0 (worst) to 100 (best)")
+    gb.configure_column("environment_score", valueFormatter="Number(value).toFixed(0)",
+                        header_name="Environment\nRating", width=140,
+                        headerTooltip="Environmental rating, from 0 (worst) to 100 (best)")
+    gb.configure_column("final_score", valueFormatter="Number(value).toFixed(0)",
+                        header_name="Overall\nRating", width=120,
+                        headerTooltip="Combined rating (nutritional & environmental), from 0 (worst) to 100 (best)")
     grid_options = gb.build()
 
     grid_response = AgGrid(
-        recipe_df,
+        df,  # use the cleaned df
         gridOptions=grid_options,
-        theme= 'streamlit',
+        theme='streamlit',
         update_on="value_changed",
         enable_enterprise_modules=False,
         fit_columns_on_grid_load=True,
         reload_data=True,
-        allow_unsafe_jscode=True
-        )
-    
-    if st.button("🔄 Recalculate Scores with Updated Preferences"):
-        previous_df = st.session_state.profile['other']['recipe_df']
-        if previous_df is not None:
-            updated_results = []
+        allow_unsafe_jscode=True,
+        data_return_mode="AS_INPUT",
+        update_mode="SELECTION_CHANGED",
+    )
 
-            for _, row in previous_df.iterrows():
-                recipe_id = row['recipe_id']
-                title = row['title']
-                rating = row['rating']
-
-                try:
-                    # Recalculate scores with new profile
-                    health_contributions, environmental_contributions = calculate_score(recipe_id)
-                    health_score = int(round((sum(health_contributions.values()) * 100), 0))
-                    environment_score = int(round((sum(environmental_contributions.values()) * 100), 0))
-                    final_score = int(round(((health_weight / 100) * health_score + (environment_weight / 100) * environment_score), 0))
-
-                    updated_results.append({
-                        'recipe_id': recipe_id,
-                        'title': title,
-                        'rating': rating,
-                        'health_score': health_score,
-                        'environment_score': environment_score,
-                        'final_score': final_score
-                    })
-
-                except Exception as e:
-                    st.warning(f"Could not update recipe {recipe_id}: {e}")
-
-            # Update the recipe table in session state
-            st.session_state.profile['other']['recipe_df'] = pd.DataFrame(updated_results)
-            st.rerun()  # Rerun to refresh the table view
-
-
-    # Check if a row is selected
-    selected_rows = grid_response['selected_rows']
-
-    if selected_rows is not None and not selected_rows.empty:
+    # Robust selection handling (list or DataFrame depending on st_aggrid version)
+    selected_rows = grid_response.get('selected_rows')
+    recipe_id = None
+    if isinstance(selected_rows, list) and selected_rows:
+        recipe_id = selected_rows[0].get('recipe_id')
+    elif hasattr(selected_rows, "empty") and not selected_rows.empty:
         recipe_id = selected_rows['recipe_id'].values[0]
+
+    if recipe_id is not None:
+        recipe_id = int(recipe_id)
         selected_recipe = recipes_df[recipes_df['recipe_id'] == recipe_id].iloc[0]
-        recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(['**🥘 Recipe**', '**🥗 Nutrition**', '**🌳 Environment**', '**🔢 Calculation**'])
+        recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(
+            ['**🥘 Recipe**', '**🥗 Nutrition**', '**🌳 Environment**', '**🔢 Calculation**']
+        )
+# ==== REPLACE UNTIL HERE ====
+
 
 # ----------------------------------------------------------------------------------------------------
 # Recipe Tab

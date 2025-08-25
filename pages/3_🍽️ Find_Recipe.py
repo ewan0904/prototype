@@ -817,8 +817,11 @@ if recipe_df is not None and not recipe_df.empty:
         key="recipes_grid",   # stable key helps event propagation
     )
 
+
     # Read selection (covers both list and DataFrame return types)
     selected_rows = grid_response.get("selected_rows")
+    st.write("selected_rows:", grid_response.get("selected_rows"))
+
     recipe_id = None
     if isinstance(selected_rows, list) and selected_rows:
         recipe_id = selected_rows[0].get("recipe_id")
@@ -826,10 +829,7 @@ if recipe_df is not None and not recipe_df.empty:
         recipe_id = selected_rows.iloc[0]["recipe_id"]
 
     if recipe_id is not None:
-        st.write("here")
         recipe_id = int(recipe_id)
-        st.write(recipe_id)
-        st.write(type(recipe_id))
         selected_recipe = recipes_df[recipes_df["recipe_id"] == recipe_id].iloc[0]
         recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(
             ["**🥘 Recipe**", "**🥗 Nutrition**", "**🌳 Environment**", "**🔢 Calculation**"]

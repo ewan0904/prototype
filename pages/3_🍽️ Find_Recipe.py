@@ -827,6 +827,8 @@ if recipe_df is not None and not recipe_df.empty:
 
     if recipe_id is not None:
         recipe_id = int(recipe_id)
+        st.write(recipe_id)
+        st.write(type(recipe_id))
         selected_recipe = recipes_df[recipes_df["recipe_id"] == recipe_id].iloc[0]
         recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(
             ["**🥘 Recipe**", "**🥗 Nutrition**", "**🌳 Environment**", "**🔢 Calculation**"]

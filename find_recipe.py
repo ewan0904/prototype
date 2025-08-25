@@ -9,7 +9,6 @@ def get_recipe(input):
         response_text = response.json()['text']
         recipe_ids = response_text.split(",")
         recipe_ids = [x.strip() for x in recipe_ids]
-        st.write(recipe_ids)
         return recipe_ids
     except requests.exceptions.RequestException as e:
         return f"Error making API request: Please inform me about this."

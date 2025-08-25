@@ -800,7 +800,7 @@ if recipe_df is not None:
         recipe_df,
         gridOptions=grid_options,
         theme= 'streamlit',
-        update_mode='SELECTION_CHANGED',
+        update_on="value_changed",
         enable_enterprise_modules=False,
         fit_columns_on_grid_load=True,
         reload_data=True,

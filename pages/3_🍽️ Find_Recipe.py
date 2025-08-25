@@ -780,6 +780,9 @@ if recipe_df is not None:
             The other ratings show how well a recipe is performing when looking at its nutritional composition related to human health, environmental impact, and a combined score. 
             All of the ratings are calculated based on your preferences, and range from 0 (worst) to 100 (best).
             """,  icon="ℹ️")
+
+    recipe_df = st.session_state.profile['other']['recipe_df'].copy()
+    recipe_df['recipe_id'] = recipe_df['recipe_id'].astype('string')  # prevent BigInt on the JS side
     
     gb = GridOptionsBuilder.from_dataframe(recipe_df)
     gb.configure_selection('single', use_checkbox=False)  # Single cell selection
@@ -845,7 +848,9 @@ if recipe_df is not None:
 
     if selected_rows is not None and not selected_rows.empty:
         recipe_id = selected_rows['recipe_id'].values[0]
-        selected_recipe = recipes_df[recipes_df['recipe_id'] == recipe_id].iloc[0]
+        recipe_id_int = int(recipe_id)
+        selected_recipe = recipes_df[recipes_df['recipe_id'] == recipe_id_int].iloc[0]
+        #selected_recipe = recipes_df[recipes_df['recipe_id'] == recipe_id].iloc[0]
         recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(['**🥘 Recipe**', '**🥗 Nutrition**', '**🌳 Environment**', '**🔢 Calculation**'])
 
 # ----------------------------------------------------------------------------------------------------

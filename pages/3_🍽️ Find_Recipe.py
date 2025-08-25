@@ -2,8 +2,7 @@ import streamlit as st
 from find_recipe import get_recipe
 from data.data_loader import load_recipes_data, load_ingredients_data
 import pandas as pd
-from functions import show_session_state_sidebar
-from functions import initialize_session_state
+from functions import show_session_state_sidebar, initialize_session_state
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 import ast
 import math

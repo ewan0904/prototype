@@ -826,6 +826,7 @@ if recipe_df is not None and not recipe_df.empty:
         recipe_id = selected_rows.iloc[0]["recipe_id"]
 
     if recipe_id is not None:
+        st.write("here")
         recipe_id = int(recipe_id)
         st.write(recipe_id)
         st.write(type(recipe_id))

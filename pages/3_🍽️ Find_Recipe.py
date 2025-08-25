@@ -3,7 +3,7 @@ from find_recipe import get_recipe
 from data.data_loader import load_recipes_data, load_ingredients_data
 import pandas as pd
 from functions import show_session_state_sidebar, initialize_session_state
-from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, DataReturnMode
 import ast
 import math
 import matplotlib.pyplot as plt
@@ -770,7 +770,6 @@ with st.form("find_recipe_form"):
 # # Grid options
 # ----------------------------------------------------------------------------------------------------
 # ==== REPLACE THIS WHOLE AgGrid SECTION ====
-from st_aggrid import GridUpdateMode, DataReturnMode
 
 recipe_df = st.session_state.profile['other']['recipe_df']
 if recipe_df is not None and not recipe_df.empty:
@@ -812,7 +811,7 @@ if recipe_df is not None and not recipe_df.empty:
         fit_columns_on_grid_load=True,
         enable_enterprise_modules=False,
         data_return_mode=DataReturnMode.AS_INPUT,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
+        update_on="value_changed",
         reload_data=False,
         key="recipes_grid",   # stable key helps event propagation
     )

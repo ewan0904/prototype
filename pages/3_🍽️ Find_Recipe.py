@@ -769,7 +769,7 @@ with st.form("find_recipe_form"):
 # ----------------------------------------------------------------------------------------------------
 # # Grid options
 # ----------------------------------------------------------------------------------------------------
-recipe_df = st.session_state.profile['other']['recipe_df'].copy()
+recipe_df = st.session_state.profile['other']['recipe_df']
 if recipe_df is not None:
     st.info("""
             The table below shows you a collection of different recipes that matched with your prompt. 
@@ -780,7 +780,7 @@ if recipe_df is not None:
             The other ratings show how well a recipe is performing when looking at its nutritional composition related to human health, environmental impact, and a combined score. 
             All of the ratings are calculated based on your preferences, and range from 0 (worst) to 100 (best).
             """,  icon="ℹ️")
-    recipe_df["recipe_id"] = recipe_df["recipe_id"].astype(int)
+    
     gb = GridOptionsBuilder.from_dataframe(recipe_df)
     gb.configure_selection('single', use_checkbox=False)  # Single cell selection
     gb.configure_grid_options(domLayout="normal")

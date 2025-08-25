@@ -774,28 +774,18 @@ from st_aggrid import GridUpdateMode, DataReturnMode
 
 recipe_df = st.session_state.profile['other']['recipe_df']
 if recipe_df is not None and not recipe_df.empty:
-    st.info("""
-            The table below shows you a collection of different recipes that matched with your prompt. 
-            You can click on any of them to get more details.
-
-            The user rating represents real users' feedback, ranging from 1 star (worst) to 5 star (best).
-
-            The other ratings show how well a recipe is performing when looking at its nutritional composition related to human health, environmental impact, and a combined score. 
-            All of the ratings are calculated based on your preferences, and range from 0 (worst) to 100 (best).
-            """,  icon="ℹ️")
-
-    # --- Make data JSON-serializable to avoid BigInt issues ---
+    # --- make JSON safe (avoid BigInt) ---
     df = recipe_df.copy()
     for c in df.select_dtypes(include=["int64", "Int64", "uint64", "UInt64"]).columns:
         df[c] = df[c].astype("Int64").where(df[c].notna(), None).apply(lambda v: int(v) if v is not None else None)
 
-    # --- Build grid options ---
     gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_selection('single', use_checkbox=False)
+    gb.configure_selection(selection_mode="single", use_checkbox=False)
     gb.configure_grid_options(
         domLayout="normal",
-        suppressRowClickSelection=False,   # allow row click to select
         rowSelection="single",
+        suppressRowClickSelection=False,   # allow row click to select
+        rowMultiSelectWithClick=True,      # also treat row click as selection
         getRowId=JsCode("function(p){ return String(p.data.recipe_id ?? p.rowIndex); }"),
     )
     gb.configure_pagination(enabled=True, paginationPageSize=5)
@@ -805,46 +795,41 @@ if recipe_df is not None and not recipe_df.empty:
     gb.configure_column("rating", header_name="User\nRating", width=80,
                         headerTooltip="Actual user ratings, from 1 (worst) to 5 (best)")
     gb.configure_column("health_score", valueFormatter="Number(value).toFixed(0)",
-                        header_name="Health\nRating", width=120,
-                        headerTooltip="Nutritional rating, from 0 (worst) to 100 (best)")
+                        header_name="Health\nRating", width=120)
     gb.configure_column("environment_score", valueFormatter="Number(value).toFixed(0)",
-                        header_name="Environment\nRating", width=140,
-                        headerTooltip="Environmental rating, from 0 (worst) to 100 (best)")
+                        header_name="Environment\nRating", width=140)
     gb.configure_column("final_score", valueFormatter="Number(value).toFixed(0)",
-                        header_name="Overall\nRating", width=120,
-                        headerTooltip="Combined rating (nutritional & environmental), from 0 (worst) to 100 (best)")
+                        header_name="Overall\nRating", width=120)
 
-    # Hide the auto index column if st_aggrid injects it
-    if "::auto_unique_id::" in df.columns:
+    if "::auto_unique_id::" in df.columns:  # hide auto id if present
         gb.configure_column("::auto_unique_id::", hide=True)
 
-    grid_options = gb.build()
-
     grid_response = AgGrid(
-        df,                                        # use the cleaned df
-        gridOptions=grid_options,
-        theme='streamlit',
-        fit_columns_on_grid_load=True,
+        df,
+        gridOptions=gb.build(),
+        theme="streamlit",
         allow_unsafe_jscode=True,
-        data_return_mode=DataReturnMode.AS_INPUT,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,   # emit on row selection
+        fit_columns_on_grid_load=True,
         enable_enterprise_modules=False,
-        reload_data=True,
+        data_return_mode=DataReturnMode.AS_INPUT,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,
+        reload_data=False,
+        key="recipes_grid",   # stable key helps event propagation
     )
 
-    # Robust selection handling
-    selected_rows = grid_response.get('selected_rows')
+    # Read selection (covers both list and DataFrame return types)
+    selected_rows = grid_response.get("selected_rows")
     recipe_id = None
     if isinstance(selected_rows, list) and selected_rows:
-        recipe_id = selected_rows[0].get('recipe_id')
+        recipe_id = selected_rows[0].get("recipe_id")
     elif hasattr(selected_rows, "empty") and not selected_rows.empty:
-        recipe_id = selected_rows['recipe_id'].values[0]
+        recipe_id = selected_rows.iloc[0]["recipe_id"]
 
     if recipe_id is not None:
         recipe_id = int(recipe_id)
-        selected_recipe = recipes_df[recipes_df['recipe_id'] == recipe_id].iloc[0]
+        selected_recipe = recipes_df[recipes_df["recipe_id"] == recipe_id].iloc[0]
         recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(
-            ['**🥘 Recipe**', '**🥗 Nutrition**', '**🌳 Environment**', '**🔢 Calculation**']
+            ["**🥘 Recipe**", "**🥗 Nutrition**", "**🌳 Environment**", "**🔢 Calculation**"]
         )
 # ==== END REPLACEMENT ====
 

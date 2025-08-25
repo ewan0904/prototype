@@ -7,12 +7,8 @@ def get_recipe(input):
     try:
         response = requests.post(st.secrets['DATASTAX_API'], json=payload)
         response_text = response.json()['text']
-        st.write("it gets here")
-
         recipe_ids = response_text.split(",")
-        st.write("now, here, recipe_ids")
         recipe_ids = [x.strip() for x in recipe_ids]
-        st.write("strip() works too")
         return recipe_ids
     except requests.exceptions.RequestException as e:
         return f"Error making API request: Please inform me about this."

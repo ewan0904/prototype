@@ -818,7 +818,7 @@ if recipe_df is not None and not recipe_df.empty:
     )
 
 
-    # Read selection (covers both list and DataFrame return types)
+    # Read selection (covers both list and DataFrame return types) 
     selected_rows = grid_response['selected_rows']
 
     recipe_id = None

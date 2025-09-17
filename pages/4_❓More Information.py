@@ -1,10 +1,12 @@
 import streamlit as st
-from auth import check_auth
+from utils.auth import check_auth
 
-check_auth()  # 🔐 Protect this page
+# --- Authentication ---
+# Ensure only authorized users can access this page.
+check_auth()
 
+# --- Frontend ---
 st.title("More Information")
-
 st.header("🌱 Environmental Metrics")
 
 # --------------------------------------------------

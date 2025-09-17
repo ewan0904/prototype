@@ -1,20 +1,27 @@
 import streamlit as st
-from functions import initialize_session_state
-from auth import check_auth
+from utils.functions import initialize_session_state
+from utils.auth import check_auth
 
-check_auth()  # 🔐 Protect this page
+# --- Authentication ---
+# This ensures only authorized users can access the page.
+check_auth()
 
-
+# --- Session State Initialization ---
+# Sets up default session state variables (if they are not already defined).
 initialize_session_state()
 
+# --- Page Configuration ---
+# Sets the browser tab title and layout for this page.
 st.set_page_config(
     page_title="Welcome",
     layout="wide"
 )
 
+# --- Page Content ---
+# Renders a markdown-formatted welcome message to guide the user for the purpose of my survey.
 st.markdown(
-    """
-    # Welcome, and Thank You for Participating!
+"""
+# Welcome, and Thank You for Participating!
 
 We appreciate your time and interest in taking part in this research project.
 
@@ -48,5 +55,5 @@ This prototype was created to address a common gap: the lack of clear, accessibl
 We hope this prototype helps you discover a recipe that suits both your taste and values.  
 Thank you again for being part of this study!
 
-    """
+"""
 )

@@ -1,25 +1,25 @@
 import streamlit as st
-from find_recipe import get_recipe
+from utils.find_recipe import get_recipe
 from data.data_loader import load_recipes_data, load_ingredients_data
 import pandas as pd
-from functions import show_session_state_sidebar, initialize_session_state
+from utils.functions import show_session_state_sidebar, initialize_session_state
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, DataReturnMode
 import ast
 import math
 import matplotlib.pyplot as plt
 import streamlit.components.v1 as components
-from auth import check_auth
+from utils.auth import check_auth
 
-check_auth()  # 🔐 Protect this page
+# --- Authentication ---
+# Ensure only authorized users can access this page.
+check_auth()
 
-
-# ----------------------------------------------------------------------------------------------------
-st.markdown("# Find your Recipe")
+# --- Session State Initialization ---
+# Sets up default session state variables (if they are not already defined).
 initialize_session_state()
-#show_session_state_sidebar()
+
 # ----------------------------------------------------------------------------------------------------
 # Load data
-# ----------------------------------------------------------------------------------------------------
 recipes_df = load_recipes_data()
 ingredients_df = load_ingredients_data()
 meals = st.session_state.profile['General']['Number_of_meals']
@@ -31,9 +31,9 @@ health_weight = st.session_state.profile['Weights']['Overall']['Health']
 environment_weight = st.session_state.profile['Weights']['Overall']['Environment']
 
 # ----------------------------------------------------------------------------------------------------
-# Helper Functions - Calculations
-# ----------------------------------------------------------------------------------------------------
-# Macros
+# --- Helper Functions - Calculations ---
+
+# --- Macro-Nutrients ---
 def calculate_macros_interval_score(name, value):
     weight = st.session_state.profile['Weights']['Macros'][name]
     lower_bound = (st.session_state.profile['Macros'][name][0]) / meals
@@ -51,7 +51,6 @@ def calculate_macros_interval_score(name, value):
     else: 
         return weight - min(weight, weight * ((value - upper_bound) / interval))
 
-# ----------------------------------------------------------------------------------------------------
 def calculate_macros_UL_score(name, value):
     weight = st.session_state.profile['Weights']['Macros'][name]
     upper_limit = (st.session_state.profile['Macros'][name])/ meals
@@ -61,7 +60,7 @@ def calculate_macros_UL_score(name, value):
     
     else:
         return weight - min(weight, weight * ((value - upper_limit) / upper_limit))
-# ----------------------------------------------------------------------------------------------------
+
 def calculate_macros_RDI_score(name, value):
     weight = st.session_state.profile['Weights']['Macros'][name]
     RDI = (st.session_state.profile['Macros'][name]) / meals
@@ -73,8 +72,7 @@ def calculate_macros_RDI_score(name, value):
         deviation = abs((value - RDI) / RDI)
         return weight - min(weight, weight * deviation)
 
-# ----------------------------------------------------------------------------------------------------
-# Micros
+# --- Micro-Nutrients ---
 def calculate_micros_UL_score(name, value):
     weight = st.session_state.profile['Weights']['Micros'][name]
     lower_bound = (st.session_state.profile['Micros'][name]) / meals # RDI
@@ -95,7 +93,6 @@ def calculate_micros_UL_score(name, value):
         deviation = (value - upper_bound) / interval
         return weight - min(weight, weight * deviation)
 
-# ----------------------------------------------------------------------------------------------------
 def calculate_micros_RDI_score(name, value):
     weight = st.session_state.profile['Weights']['Micros'][name]
     RDI = (st.session_state.profile['Micros'][name]) / meals
@@ -110,9 +107,7 @@ def calculate_micros_RDI_score(name, value):
     # Apply penalty
     return weight - min(weight, weight * deviation)
 
-# ----------------------------------------------------------------------------------------------------
-# Environment
-
+# --- Environment ---
 def calculate_environment_score(name, value, servings):
     weight = st.session_state.profile['Weights']['Environment'][name]
     threshold = st.session_state.profile['Environment'][name] / servings
@@ -136,8 +131,7 @@ def calculate_environment_reverse_score(name, value, divider):
         penalty = min(weight, weight * (1 - ratio))
         return round(weight - penalty, 4)
 
-# ----------------------------------------------------------------------------------------------------
-# Total score
+# --- Total score ---
 def calculate_score(recipe_id):
     health_contributions = {}
     environmental_contributions = {}
@@ -189,8 +183,7 @@ def calculate_score(recipe_id):
     return health_contributions, environmental_contributions
 
 # ----------------------------------------------------------------------------------------------------
-# Helper Functions - HTML/Warning
-# ----------------------------------------------------------------------------------------------------
+# --- Helper Functions - HTML/Warning ---
 def render_bar_macros_interval(name, unit, value, lower, upper):
     try:
         value = float(value)
@@ -239,7 +232,6 @@ def render_bar_macros_interval(name, unit, value, lower, upper):
     """
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_macros_UL(name, unit, value, upper):
     try:
         value = float(value)
@@ -282,7 +274,6 @@ def render_bar_macros_UL(name, unit, value, upper):
     """
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_macros_RDI(name, unit, value, RDI):
     try:
         value = float(value)
@@ -336,7 +327,6 @@ def render_bar_macros_RDI(name, unit, value, RDI):
     """
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_micros_RDI(name, unit, value, RDI):
     try:
         value = float(value)
@@ -391,7 +381,6 @@ def render_bar_micros_RDI(name, unit, value, RDI):
 
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_micros_RDI_UL(name, unit, value, RDI, UL):
     try:
         value = float(value)
@@ -458,7 +447,6 @@ def render_bar_micros_RDI_UL(name, unit, value, RDI, UL):
 
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_micros_UL(name, unit, value, UL):
     try:
         value = float(value)
@@ -503,7 +491,6 @@ def render_bar_micros_UL(name, unit, value, UL):
 
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def blend_hex(c1, c2, t: float) -> str:
     """
     Linear-interpolate between two hex colours.
@@ -518,7 +505,6 @@ def blend_hex(c1, c2, t: float) -> str:
     b = round(b1 + (b2 - b1) * t)
     return f"#{r:02X}{g:02X}{b:02X}"
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_environment(name, unit, value, threshold, multiplier, decimal, servings):
     try:
         value = float(value) * multiplier
@@ -571,7 +557,6 @@ def render_bar_environment(name, unit, value, threshold, multiplier, decimal, se
 
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_environment_median(name, unit, value, threshold, multiplier, decimal):
     try:
         value = float(value) * multiplier
@@ -623,7 +608,6 @@ def render_bar_environment_median(name, unit, value, threshold, multiplier, deci
 
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_bar_human_health(name, value, threshold, divider):
     try:
         value = (1 / float(value)) / divider
@@ -676,7 +660,6 @@ def render_bar_human_health(name, value, threshold, divider):
     """
     st.markdown(bar, unsafe_allow_html=True)
 
-# ----------------------------------------------------------------------------------------------------
 def render_warning_environmental(value, description, recipe_id):
     if value == 0:
         st.success(f"✅ All ingredients were able to be backed up by {description} data!")
@@ -687,7 +670,6 @@ def render_warning_environmental(value, description, recipe_id):
         formatted_list = '\n' + '\n'.join(f"- {item}" for item in missing_ingredients_list)
         st.warning(f"""🟠 {value} ingredients could not be backed up by {description} data. The {description} rating could slightly vary from the actual rating!\nMissing data on: {formatted_list}""")
 
-# ----------------------------------------------------------------------------------------------------
 def render_warning_nutritional(value, description, recipe_id):
     if value == 0:
         st.success(f"✅ All ingredients were able to be backed up by {description} data!")
@@ -699,8 +681,8 @@ def render_warning_nutritional(value, description, recipe_id):
         st.warning(f"""🟠 {value} ingredients could not be backed up by {description} data. The {description} rating regarding the **vitamins and minerals** could slightly vary from the actual rating!\nMissing data on: {formatted_list}""")
 
 # ----------------------------------------------------------------------------------------------------
-# Beginning of the UI
-# ----------------------------------------------------------------------------------------------------
+# --- Frontend ---
+st.markdown("# Find your Recipe")
 
 def recipe_tab(prompt):
     recipe_ids = get_recipe(prompt)
@@ -710,11 +692,11 @@ def recipe_tab(prompt):
         try:
             recipe_ids_int.append(int(rid))
         except ValueError:
-            pass  # or log/collect invalid ones if needed
+            pass
     results = []
     filtered_recipes = recipes_df[recipes_df['recipe_id'].isin(recipe_ids_int)]
 
-    # Iterate over all recipes
+    # Iterate over all recipes; filtered recipes are the IDs of the recipes
     for _, recipe_row in filtered_recipes.iterrows():
         recipe_id = recipe_row['recipe_id']
         rating = float(recipe_row['Rating'])
@@ -744,9 +726,7 @@ def recipe_tab(prompt):
     df = pd.DataFrame(results)
     st.session_state.profile['other']['recipe_df'] = df
 
-# ----------------------------------------------------------------------------------------------------
 # Find Recipe Form
-# ----------------------------------------------------------------------------------------------------
 with st.form("find_recipe_form"):
     st.markdown(f"""
     <div style='font-size: 0.875rem; font-family: "Source Sans Pro", sans-serif; line-height: 1.6;'>
@@ -757,6 +737,8 @@ with st.form("find_recipe_form"):
                 "Show me a recipe from the Asian cuisine, with chicken and vegetables. I am allergic to nuts and gluten; so please exclude these ingredients."
     """, unsafe_allow_html=True)
 
+    # Prompt of the user containing the recipe description
+    # The description is used to perform a vector-based search via Datastax Langflow
     recipe_description = st.text_input("Recipe Description")
 
     find_recipe_form_submit = st.form_submit_button("Find Recipe")
@@ -766,14 +748,9 @@ with st.form("find_recipe_form"):
         else:
             recipe_tab(recipe_description)
 
-# ----------------------------------------------------------------------------------------------------
 # # Grid options
-# ----------------------------------------------------------------------------------------------------
-# ==== REPLACE THIS WHOLE AgGrid SECTION ====
-
 recipe_df = st.session_state.profile['other']['recipe_df']
 if recipe_df is not None and not recipe_df.empty:
-    # --- make JSON safe (avoid BigInt) ---
     df = recipe_df.copy()
     for c in df.select_dtypes(include=["int64", "Int64", "uint64", "UInt64"]).columns:
         df[c] = df[c].astype("Int64").where(df[c].notna(), None).apply(lambda v: int(v) if v is not None else None)
@@ -816,10 +793,8 @@ if recipe_df is not None and not recipe_df.empty:
         key="recipes_grid",   # stable key helps event propagation
     )
 
-
     # Read selection (covers both list and DataFrame return types) 
     selected_rows = grid_response['selected_rows']
-    st.write(selected_rows)
 
     recipe_id = None
     if isinstance(selected_rows, list) and selected_rows:
@@ -833,7 +808,6 @@ if recipe_df is not None and not recipe_df.empty:
         recipe_tab, nutrition_tab, environment_tab, calculation_tab = st.tabs(
             ["**🥘 Recipe**", "**🥗 Nutrition**", "**🌳 Environment**", "**🔢 Calculation**"]
         )
-# ==== END REPLACEMENT ====
 
 # ----------------------------------------------------------------------------------------------------
 # Recipe Tab
@@ -1064,7 +1038,6 @@ if recipe_df is not None and not recipe_df.empty:
                 # Display full table
                 st.table(environmental_contributions_df)
 
-# ----------------------------------------------------------------------------------------------------
 elif st.session_state.profile['other']['recipe_df'] is None:
     st.write("")
 else:

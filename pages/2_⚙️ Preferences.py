@@ -3,19 +3,19 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-from functions import show_session_state_sidebar
-from functions import initialize_session_state
-from auth import check_auth
+from utils.functions import show_session_state_sidebar
+from utils.functions import initialize_session_state
+from utils.auth import check_auth
 
-check_auth()  # 🔐 Protect this page
+# --- Authentication ---
+# Ensure only authorized users can access this page.
+check_auth() 
 
-# ----------------------------------------------------------------------------------------------------
-
+# --- Session State Initialization ---
+# Sets up default session state variables (if they are not already defined).
 initialize_session_state()
-#show_session_state_sidebar()
 
-# ----------------------------------------------------------------------------------------------------
-# Helper functions
+# --- Short references and variables ---
 options = ['Default', 'Somewhat important', 'Important', 'Very important', "Exclude"]
 factors = {"Default": 1.0, "Somewhat important": 1.25, "Important": 1.5, "Very important": 2.0, "Exclude": 0.0}
 macros_weight = st.session_state.profile['Weights']['Macros']
@@ -24,8 +24,20 @@ nutrients_importance = st.session_state.profile['Importance']
 environment_weight = st.session_state.profile['Weights']['Environment']
 environment_importance = st.session_state.profile['Importance']['Environment']
 
-def create_importance_radio(category, item):
+# ----------------------------------------------------------------------------------------------------
+# --- Helper functions ---
 
+def create_importance_radio(category, item):
+    """
+    Render a horizontal radio for an importance choice and return the selection.
+
+    Args:
+        category: One of "Macros", "Micros", or "Environment".
+        item: The metric label to display and key into session-state dictionaries.
+
+    Returns:
+        The selected importance option as a string (must exist in `options`).
+    """
     selected = st.radio(
         label=f"How important is {item} to you?",
         options=options, 
@@ -37,6 +49,12 @@ def create_importance_radio(category, item):
     return selected
 
 def set_default_nutritional_weights():
+    """
+    Overwrite macros/micros weights with a neutral default distribution.
+
+    The defaults act as a baseline. The user's qualitative importance choices
+    will scale these defaults before normalization.
+    """
     default_macros_weight = {
     "Protein": 0.15,
     "Carbohydrates": 0.15,
@@ -74,8 +92,10 @@ def set_default_nutritional_weights():
     for key, value in default_micros_weights.items():
         micros_weight[f'{key}'] = value
 
-
 def set_default_environmental_weights():
+    """
+    Overwrite environmental weights with a neutral default distribution.
+    """
     default_environment_weights = {
     "Climate Change": 1/11,
     "Ozone Layer Depletion": 1/11,
@@ -94,18 +114,31 @@ def set_default_environmental_weights():
         environment_weight[f'{key}'] = value
     
 def adjust_weights_nutritional():
+    """
+    Apply importance factors to macro/micro defaults and normalize to sum to 1.
+
+    Steps:
+        1) Reset to defaults.
+        2) Multiply each default weight by its importance factor.
+        3) Normalize so the sum across all macro+micro metrics equals 1.
+        4) Write back normalized weights into session state.
+    """
+    # Set to default
     set_default_nutritional_weights()
     adjusted_weights = {}
     total_sum = 0
-
+    
+    # Scale macros by importance
     for metric in macros_weight:
         adjusted_weights[f'Macros {metric}'] = macros_weight[metric] * factors.get(nutrients_importance['Macros'][metric])
         total_sum += adjusted_weights[f'Macros {metric}']
     
+    # Scale micros by importance
     for metric in micros_weight:
         adjusted_weights[f'Micros {metric}'] = micros_weight[metric] * factors.get(nutrients_importance['Micros'][f'{metric}'])
         total_sum += adjusted_weights[f'Micros {metric}']
 
+    # Normalize back to per-group dicts
     for item in adjusted_weights:
         item_list = item.split(" ", maxsplit=1)
         category = item_list[0]
@@ -116,6 +149,16 @@ def adjust_weights_nutritional():
             micros_weight[f'{metric}'] = adjusted_weights[f'{category} {metric}'] / total_sum
 
 def adjust_weights_environmental():
+    """
+    Apply importance factors to environmental defaults and normalize to sum to 1.
+
+    Steps:
+        1) Reset to defaults.
+        2) Multiply each default weight by its importance factor.
+        3) Normalize so the sum across all environmental metrics equals 1.
+        4) Write back normalized weights into session state.
+    """
+    # Set to default
     set_default_environmental_weights()
     adjusted_weights = {}
     total_sum = 0
@@ -127,9 +170,8 @@ def adjust_weights_environmental():
     for item in adjusted_weights:
         environment_weight[metric] = adjusted_weights[metric] / total_sum
         
- 
 # ----------------------------------------------------------------------------------------------------
-# Front-End
+# --- Front-End ---
 st.title("Your preferences")
 
 st.markdown("""
@@ -146,8 +188,7 @@ You can also choose to **exclude** certain metrics entirely. Excluded metrics wo
 """, unsafe_allow_html=True)
 st.write("---")
 
-# Expanders for setting the weights
-
+# --- Overall (Health vs Environment) ---
 st.subheader("**Combined**")
 with st.expander("**Overall Weights**", expanded=False, icon="⚖️"):
     st.markdown(f"""
@@ -174,7 +215,6 @@ with st.expander("**Overall Weights**", expanded=False, icon="⚖️"):
                 label_visibility="collapsed"
             )
 
-
         with col3:
             st.markdown("➡️ *Environment*")
 
@@ -182,7 +222,7 @@ with st.expander("**Overall Weights**", expanded=False, icon="⚖️"):
             st.session_state.profile['Weights']['Overall']['Environment'] = importance
             st.session_state.profile['Weights']['Overall']['Health'] = 100 - st.session_state.profile['Weights']['Overall']['Environment']
 
-# ----------------------------------------------------------------------------------------------------
+# --- Health: Macro-Nutrients ---
 st.subheader("Health")
 with st.expander("**Macro-Nutrients**", expanded=False, icon="📊"):
 
@@ -201,8 +241,7 @@ with st.expander("**Macro-Nutrients**", expanded=False, icon="📊"):
 
             adjust_weights_nutritional()
         
-
-# ----------------------------------------------------------------------------------------------------
+# --- Health: Micro-Nutrients ---
 with st.expander("**Micro-Nutrients**", expanded=False, icon="🥕"):
 
     with st.form("radio_micros_weights"):
@@ -220,7 +259,7 @@ with st.expander("**Micro-Nutrients**", expanded=False, icon="🥕"):
 
             adjust_weights_nutritional()
 
-# ----------------------------------------------------------------------------------------------------
+# --- Environment ---
 st.subheader("Environment")
 with st.expander("**Environmental Aspects**", expanded=False, icon="🌎"):
         

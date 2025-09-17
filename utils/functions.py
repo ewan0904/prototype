@@ -2,6 +2,18 @@ import streamlit as st
 
 # Initializing and styling functions
 def initialize_session_state():
+    """
+    Initialize the Streamlit session_state with default profile data if it doesn't exist.
+
+    The profile contains several nested dictionaries:
+        - General: Basic user information and preferences
+        - Macros: Macronutrient daily intake values (initially 0)
+        - Micros: Micronutrient daily intake values (initially 0)
+        - Environment: Environmental impact indicators
+        - Weights: Weighting factors for calculating scores
+        - Importance: Qualitative importance ratings (default)
+        - other: Miscellaneous session settings (e.g., UI toggles, recipe dataframes)
+    """
     if "profile" not in st.session_state:
             st.session_state.profile = {
                 "General": {
@@ -169,6 +181,14 @@ def initialize_session_state():
         } 
 
 def show_session_state_sidebar():
+    """
+    Show a checkbox in the Streamlit sidebar that toggles display of session_state data.
+
+    If the checkbox is checked:
+        - Stores the checkbox state inside session_state
+        - Expands a sidebar expander showing the full session_state as JSON
+    """
+
     # Use checkbox with stored value
     show_session_state = st.sidebar.checkbox(
         "Show Session State",

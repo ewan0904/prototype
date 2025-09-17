@@ -3,7 +3,6 @@
 
 [![Python](https://img.shields.io/badge/python-3.10.13-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/framework-Streamlit-ff4b4b.svg)](https://streamlit.io/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Last Updated](https://img.shields.io/badge/last%20updated-2025--09-lightgrey.svg)](#)
 
 ---
@@ -32,7 +31,7 @@ For more details, please refer to the **full thesis** included in this repositor
 ## 🧩 High-Level Architecture
 
 <!-- Replace the path below with the actual image path in your repo -->
-![High-Level Architecture](images/architecture.png)
+![High-Level Architecture](architecture.png)
 
 ---
 
@@ -51,3 +50,17 @@ For more details, please refer to the **full thesis** included in this repositor
 
    ```bash
    pip install -r requirements.txt
+3. Run the application locally:
+   ```bash
+   streamlit run "👋 Welcome.py" --server.headless True
+4. To use the Langflow recipe retrieval component, please contact me to get the API credentials.
+
+## 🚀 Usage
+1. After installation, launch the app and follow the guided pages.
+2. The landing page was designed for the user study survey but can also be used as a normal entry point.
+3. Proceed through the pages in order (top to bottom).
+4. After completing the setup, you can search for recipes — the system will display multiple recommended options, and you can click on them to see full details.
+
+## 📩 Contact
+If you have questions, suggestions, or want to collaborate, feel free to reach out:
+eric.wan0409@gmail.com

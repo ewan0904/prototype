@@ -7,13 +7,11 @@
 
 ---
 
-This prototype is a **Streamlit web application** connected with the [Langflow](https://www.langflow.org/) API (via [DataStax AstraDB](https://www.datastax.com/astra/db)) to make recipe recommendations for users.  
-It contains ~5600 recipes and integrates **nutritional and environmental metrics** to support sustainable food choices.
+This prototype is a **Streamlit web application** connected with the [Langflow](https://www.langflow.org/) API (via [DataStax AstraDB](https://www.datastax.com/astra/db)) to make recipe recommendations for users. It contains ~5600 recipes and integrates **nutritional and environmental metrics** to support sustainable food choices.
 
 This project was designed as part of my **Master Thesis at the [University of Twente](https://www.utwente.nl/)** in **Business Information Technology**.
 
-A user study was conducted to evaluate the system, and it received **positive feedback**, with several improvement suggestions noted.  
-For more details, please refer to the **full thesis** included in this repository.
+A user study was conducted to evaluate the system, and it received **positive feedback**, with several improvement suggestions noted. For more details, please refer to the **full thesis** included in this repository.
 
 📧 For further inquiries: [eric.wan0409@gmail.com](mailto:eric.wan0409@gmail.com)
 
@@ -30,7 +28,6 @@ For more details, please refer to the **full thesis** included in this repositor
 
 ## 🧩 High-Level Architecture
 
-<!-- Replace the path below with the actual image path in your repo -->
 ![High-Level Architecture](architecture.png)
 
 ---
@@ -52,7 +49,7 @@ For more details, please refer to the **full thesis** included in this repositor
    pip install -r requirements.txt
 3. Run the application locally:
    ```bash
-   streamlit run "👋 Welcome.py" --server.headless True
+   streamlit run 👋 Welcome.py
 4. To use the Langflow recipe retrieval component, please contact me to get the API credentials.
 
 ## 🚀 Usage

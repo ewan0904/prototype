@@ -12,7 +12,7 @@ from utils.auth import check_auth
 
 # --- Authentication ---
 # Ensure only authorized users can access this page.
-check_auth()
+#check_auth()
 
 # --- Session State Initialization ---
 # Sets up default session state variables (if they are not already defined).

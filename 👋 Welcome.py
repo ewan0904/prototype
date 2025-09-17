@@ -4,7 +4,7 @@ from utils.auth import check_auth
 
 # --- Authentication ---
 # This ensures only authorized users can access the page.
-check_auth()
+#check_auth()
 
 # --- Session State Initialization ---
 # Sets up default session state variables (if they are not already defined).

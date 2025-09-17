@@ -3,7 +3,7 @@ from utils.auth import check_auth
 
 # --- Authentication ---
 # Ensure only authorized users can access this page.
-check_auth()
+#check_auth()
 
 # --- Frontend ---
 st.title("More Information")
